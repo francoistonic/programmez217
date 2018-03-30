@@ -1,0 +1,405 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fnil\fcharset0 Calibri;\f1\froman\fcharset0 TimesNewRomanPSMT;}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab708
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\i\fs24 \cf0 public class MainActivity extends AppCompatActivity implements SensorEventListener\{\
+\
+  private SensorManager sensorManager;\
+  private Thermometer thermometer;\
+  // ...\
+\
+  @Override\
+  protected void onCreate(Bundle savedInstanceState) \{\
+    super.onCreate(savedInstanceState);\
+    setContentView(R.layout.activity_main);\
+    thermometer = (Thermometer) findViewById(R.id.thermometer);\
+    sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);\
+    // ...\
+  \}\
+\
+  // ...\
+\
+  @Override\
+  public void onSensorChanged(SensorEvent sensorEvent) \{\
+    if (sensorEvent.values.length > 0) \{\
+      temperature = sensorEvent.values[0];\
+      thermometer.setCurrentTemp(temperature);\
+    
+\f1 \}\
+
+\f0   \}\
+\
+  @Override\
+  public void onAccuracyChanged(Sensor sensor, int accuracy) \{\
+  \}\
+\
+  private void loadAmbientTemperature() \{\
+    Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);\
+\
+    if (sensor != null) \{\
+      sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_FASTEST);\
+    \} else \{\
+      Toast.makeText(this, R.string.no_temperature_sensor, Toast.LENGTH_LONG).show();\
+    
+\f1 \}\
+
+\f0   \}\
+\
+// ...\
+\pard\pardeftab708\ri-52\sl276\slmult1\sa200\partightenfactor0
+
+\f1\i0 \cf0 \
+\pard\pardeftab708\ri-52\sl276\slmult1\sa360\partightenfactor0
+\cf0 \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\b \cf0 \
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\i\b0 \cf0 public class MainActivity extends AppCompatActivity implements SensorEventListener \{\
+\
+  // ...\
+\
+  private BroadcastReceiver batteryInfoReceiver = new BroadcastReceiver() \{\
+    @Override\
+    public void onReceive(Context context, Intent intent) \{\
+      int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0);\
+\
+      if (temperature > 0) \{\
+        float temp = ((float) temperature) / 10f;\
+        thermometer.setCurrentTemp(temp);\
+      \}\
+    \}\
+  \};\
+\
+  // ...\
+\
+  private void loadExtrapolatedTemperature() \{\
+    IntentFilter intentFilter = new IntentFilter();\
+    intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);\
+\
+    registerReceiver(extrapolatedInfoReceiver, intentFilter);\
+  
+\f1 \}\
+\
+
+\f0   // ...\
+\pard\pardeftab708\ri-52\sl276\slmult1\sa360\partightenfactor0
+
+\f1\i0 \cf0 \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\b \cf0 \
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\i\b0 \cf0 public class CPU \{\
+\
+  public static int getCPUTemperature() \{\
+    File fileTemp1 = new File("/sys/devices/virtual/thermal/thermal_zone0/temp");\
+    File fileTemp2 = new File("/sys/devices/platform/s5p-tmu/temperature");\
+\
+    if (fileTemp1.exists()) \{\
+      int temp = CPU.readSystemFileAsInt("/sys/devices/virtual/thermal/thermal_zone0/temp");\
+\
+      if (temp > 3) \{\
+        if (temp > 1000) \{\
+          temp /= 1000;\
+        \}\
+\
+        return temp;\
+      \}\
+    \}\
+\
+    if (fileTemp2.exists()) \{\
+      int temp = CPU.readSystemFileAsInt("/sys/devices/platform/s5p-tmu/temperature");\
+\
+      if (temp > 3) \{\
+        if (temp > 1000) \{\
+          temp /= 1000;\
+        
+\f1 \}\
+\
+
+\f0         return temp;\
+      \}\
+    \}\
+\
+    return -1;\
+  \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\sa360\partightenfactor0
+
+\f1 \cf0 \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\i0 \cf0 \
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\i \cf0 private void loadCpuTemperature() \{\
+  int cpuTemperature = CPU.getCPUTemperature();\
+\
+  if (cpuTemperature >= 0) \{\
+    thermometer.setCurrentTemp(cpuTemperature);\
+  \} else \{\
+    Toast.makeText(this, R.string.no_cpu_temperature, Toast.LENGTH_LONG).show();\
+  
+\f1 \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\sa360\partightenfactor0
+\cf0 \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\i0\b \cf0 \
+\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\i\b0 \cf0 private BroadcastReceiver extrapolatedInfoReceiver = new BroadcastReceiver() \{\
+  @Override\
+  public void onReceive(Context context, Intent intent) \{\
+    int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0);\
+\
+    if (temperature > 0) \{\
+      float temp = (((float) temperature) / 10f) * 2.55f - 60.52f;\
+      thermometer.setCurrentTemp(temp);\
+    \}\
+  \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f1 \cf0 \
+\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0 \cf0 @Override\
+protected void onCreate(Bundle savedInstanceState) \{\
+  super.onCreate(savedInstanceState);\
+  setContentView(R.layout.activity_main);\
+  // ...\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f1 \cf0 \
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0 \cf0   // Cr\'e9ation de l\'92objet LocationRequest
+\f1 \
+
+\f0   mLocationRequest = LocationRequest.create()\
+    .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)\
+    .setInterval(10 * 1000)        // 10 seconds, in milliseconds\
+    .setFastestInterval(1 * 1000); // 1 second, in milliseconds\
+\
+  if (mGoogleApiClient == null) \{\
+    mGoogleApiClient = new GoogleApiClient.Builder(this)\
+      .addConnectionCallbacks(this)\
+      .addOnConnectionFailedListener(this)\
+      .addApi(LocationServices.API)\
+      .build();\
+  \}\
+\
+  mGoogleApiClient.connect();\
+\pard\pardeftab708\ri-52\sl276\slmult1\sa200\partightenfactor0
+
+\f1 \cf0 \}
+\i0 	\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+\cf0 \
+\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\i \cf0 @Override\
+public void onConnected(@Nullable Bundle bundle) \{\
+  isConnected = true;\
+\
+  LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, new LocationListener() \{\
+    @Override\
+    public void onLocationChanged(Location location) \{\
+      mLastLocation = location;\
+      LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);\
+\
+      if (mLastLocation != null) \{\
+        processLoadingWeatherTemperature();\
+      \} else \{\
+        Toast.makeText(MainActivity.this, R.string.error_during_location_update, Toast.LENGTH_SHORT).show();\
+      
+\f1 \}\
+
+\f0     \}\
+  \});\
+\pard\pardeftab708\ri-52\sl276\slmult1\sa360\partightenfactor0
+
+\f1 \cf0 \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\i0\b \cf0 \
+\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\b0 \cf0 public class Weather \{\
+\
+  public static final String API_KEY; // \'e0 renseigner\
+  public static final String OPEN_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather?lat=$lat$&lon=$lon$&appid=$appid$";\
+  private OkHttpClient okHttpClient;\
+\
+  public Weather() \{\
+    okHttpClient = new OkHttpClient();\
+  \}\
+\
+  public Double getTemperature(float lat, float lng) \{\
+    Double temperature = null;\
+    String apiKey = apiKey();\
+    String url = OPEN_WEATHER_URL.replace("$lat$", lat + "")\
+      .replace("$lon$", lng + "")\
+      .replace("$appid$", API_KEY);\
+\
+    Request request = new Request.Builder()\
+      .url(url)\
+      .build();\
+\
+    try \{\
+      Response response = okHttpClient.newCall(request).execute();\
+      String json = response.body().string();\
+      JSONObject jsonObject = new JSONObject(json);\
+\
+      if (jsonObject.getInt("cod") == 200) \{\
+        JSONObject mainObject = jsonObject.getJSONObject("main");\
+\
+        if (mainObject != null) \{\
+          double value = mainObject.getDouble("temp") - 273.15f;\
+          temperature = value;\
+        \}\
+      \}\
+\
+    \} catch (Exception e) \{ \}\
+\
+    return temperature;\
+  \}
+\f1 \
+\pard\pardeftab708\ri-52\sl276\slmult1\sa360\qj\partightenfactor0
+\cf0 \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+\cf0 \
+\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\i \cf0 private void processLoadingWeatherTemperature() \{\
+  final float lat = (float) mLastLocation.getLatitude();\
+  final float lng = (float) mLastLocation.getLongitude();\
+\
+  progressDialog = new MaterialDialog.Builder(this)\
+    .title(R.string.loading_weather_temperature)\
+    .content(R.string.wait)\
+    .progress(true, 0)\
+    .show();\
+\
+  new Thread(new Runnable() \{\
+    @Override\
+    public void run() \{\
+\
+      Weather weather = new Weather();\
+      final Double temperature = weather.getTemperature(lat, lng);\
+\
+      runOnUiThread(new Runnable() \{\
+        @Override\
+        public void run() \{\
+          Utils.closeDialog(progressDialog);\
+\
+          if (temperature != null) \{\
+            thermometer.setCurrentTemp(temperature.floatValue());\
+          \} else \{\
+            Toast.makeText(MainActivity.this, R.string.no_weather_temperature, Toast.LENGTH_LONG).show();\
+          
+\f1 \}\
+
+\f0         \}\
+      \});\
+    \}\
+  \}).start();\
+\pard\pardeftab708\ri-52\sl276\slmult1\sa360\qj\partightenfactor0
+
+\f1\i0 \cf0 \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\b \cf0 \
+\
+\pard\pardeftab708\ri-52\sl276\slmult1\partightenfactor0
+
+\f0\i\b0 \cf0 public class Thermometer extends View \{\
+\
+  // ...\
+\
+  public void setCurrentTemp(float currentTemp) \{\
+    if (currentTemp > maxTemp) \{\
+      this.currentTemp = maxTemp;\
+    \} else if (currentTemp < minTemp) \{\
+      this.currentTemp = minTemp;\
+    \} else \{\
+      this.currentTemp = currentTemp;\
+    \}\
+\
+    invalidate();\
+  \}\
+\
+  // ...\
+\
+  @Override\
+  protected void onDraw(Canvas canvas) \{\
+    super.onDraw(canvas);\
+    int height = getHeight();\
+    int width = getWidth();\
+\
+    int CircleCenterX = width / 2;\
+    float CircleCenterY = height - outerCircleRadius;\
+    float outerStartY = 0;\
+    float middleStartY = outerStartY + 5;\
+\
+    float innerEffectStartY = middleStartY + middleRectRadius + 10;\
+    float innerEffectEndY = CircleCenterY - outerCircleRadius - 10;\
+    float innerRectHeight = innerEffectEndY - innerEffectStartY;\
+    float innerStartY = innerEffectStartY + (maxTemp - currentTemp) / rangeTemp * innerRectHeight;\
+\
+    RectF outerRect = new RectF();\
+    outerRect.left = CircleCenterX - outerRectRadius;\
+    outerRect.top = outerStartY;\
+    outerRect.right=CircleCenterX + outerRectRadius;\
+    outerRect.bottom = CircleCenterY;\
+    \
+	canvas.drawRoundRect(outerRect, outerRectRadius, outerRectRadius, outerPaint);\
+    canvas.drawCircle(CircleCenterX, CircleCenterY, outerCircleRadius, outerPaint);\
+\
+    RectF middleRect = new RectF();\
+    middleRect.left = CircleCenterX - middleRectRadius;\
+    middleRect.top = middleStartY;\
+    middleRect.right=CircleCenterX + middleRectRadius;\
+    middleRect.bottom = CircleCenterY;\
+	\
+    canvas.drawRoundRect(middleRect, middleRectRadius, middleRectRadius, middlePaint);\
+    canvas.drawCircle(CircleCenterX, CircleCenterY, middleCircleRadius, middlePaint);\
+    canvas.drawRect(CircleCenterX - innerRectRadius, innerStartY, CircleCenterX + innerRectRadius, CircleCenterY, innerPaint);\
+    canvas.drawCircle(CircleCenterX, CircleCenterY, innerCircleRadius, innerPaint);\
+\
+    // Tra\'e7age des graduations\
+    float tmp = innerEffectStartY;\
+    float startGraduation = maxTemp;\
+    float inc = rangeTemp / nbGraduations;\
+\
+    while (tmp <= innerEffectEndY) \{\
+      canvas.drawLine(CircleCenterX - outerRectRadius - DEGREE_WIDTH, tmp,\
+        CircleCenterX - outerRectRadius, tmp, degreePaint);\
+      String txt = ((int)startGraduation) + "\'b0";\
+        graduationPaint.getTextBounds(txt, 0, txt.length(), rect);\
+      float textWidth = rect.width();\
+      float textHeight = rect.height();\
+\
+      canvas.drawText(((int) startGraduation) + "\'b0", \
+        CircleCenterX - outerRectRadius - DEGREE_WIDTH - textWidth - DEGREE_WIDTH * 1.5f,\
+        tmp + textHeight / 2, graduationPaint);\
+      tmp += (innerEffectEndY - innerEffectStartY) / nbGraduations;\
+      startGraduation -= inc;\
+    \}\
+  \}\
+\pard\pardeftab708\ri-52\sl276\slmult1\sa360\qj\partightenfactor0
+
+\f1\i0 \cf0 \}
+\f0  
+\f1 \
+}
